@@ -15,7 +15,7 @@ ENABLE_UART                      := 1
 ENABLE_UART_DEBUG                := 0
 # AirCopy 2.5 kB
 ENABLE_AIRCOPY                   := 0
-ENABLE_AIRCOPY_REMEMBER_FREQ     := 1
+ENABLE_AIRCOPY_REMEMBER_FREQ     := 0
 ENABLE_AIRCOPY_RX_REBOOT         := 0
 # FM Radio 4.2 kB
 ENABLE_FMRADIO_64_76             := 0
@@ -40,7 +40,7 @@ ENABLE_MDC1200                   := 1
 ENABLE_MDC1200_SHOW_OP_ARG       := 1
 ENABLE_PWRON_PASSWORD            := 0
 ENABLE_RESET_AES_KEY             := 0
-ENABLE_BIG_FREQ                  := 0
+ENABLE_BIG_FREQ                  := 1
 # smaa bolf 580 B
 ENABLE_SMALL_BOLD                := 1
 # smallest font 2 kB
@@ -55,7 +55,7 @@ ENABLE_F_CAL_MENU                := 0
 ENABLE_TX_UNLOCK                 := 0
 ENABLE_CTCSS_TAIL_PHASE_SHIFT    := 1
 ENABLE_CONTRAST                  := 0
-ENABLE_BOOT_BEEPS                := 0
+ENABLE_BOOT_BEEPS                := 1
 ENABLE_DTMF_CALL_FLASH_LIGHT     := 1
 ENABLE_FLASH_LIGHT_SOS_TONE      := 0
 ENABLE_SHOW_CHARGE_LEVEL         := 0
@@ -75,7 +75,7 @@ ENABLE_COPY_CHAN_TO_VFO_TO_CHAN  := 1
 # Rx Signal Bar 400 B
 ENABLE_RX_SIGNAL_BAR             := 1
 # Tx Audio Bar 300 B
-ENABLE_TX_AUDIO_BAR              := 0
+ENABLE_TX_AUDIO_BAR              := 1
 # Side Button Menu 300 B
 ENABLE_SIDE_BUTT_MENU            := 1
 # Key Lock 400 B
@@ -496,9 +496,9 @@ all: $(TARGET)
 
 	$(info PYTHON = $(PYTHON))
 
-	-python fw-pack.py $<.bin $(GIT_HASH) $<.packed.bin
-	-python3 fw-pack.py $<.bin $(GIT_HASH) $<.packed.bin
-#	-$(PYTHON) fw-pack.py $<.bin $(GIT_HASH) $<.packed.bin
+#	-python fw-pack.py $<.bin $(GIT_HASH) $<.packed.bin
+#	-python3 fw-pack.py $<.bin $(GIT_HASH) $<.packed.bin
+	-$(PYTHON) fw-pack.py $<.bin $(GIT_HASH) $<.packed.bin
 
 	$(SIZE) $<
 
@@ -507,6 +507,9 @@ debug:
 
 flash:
 	/opt/openocd/bin/openocd -c "bindto 0.0.0.0" -f interface/jlink.cfg -f dp32g030.cfg -c "write_image firmware.bin 0; shutdown;"
+
+prog:
+	k5prog -F -YYY -b firmware.bin
 
 version.o: .FORCE
 
