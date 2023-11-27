@@ -1,4 +1,4 @@
-/* Copyright 2023 Dual Tachyon
+/* Copyright 2023 One of Eleven
  * https://github.com/DualTachyon
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,26 +14,18 @@
  *     limitations under the License.
  */
 
-#ifndef APP_APP_H
-#define APP_APP_H
+#ifndef FREQ_IGNORE_H
+#define FREQ_IGNORE_H
 
+#include <stdint.h>
 #include <stdbool.h>
 
-#include "functions.h"
-#include "frequencies.h"
-#include "radio.h"
-
-extern const uint8_t orig_lnas;
-extern const uint8_t orig_lna;
-extern const uint8_t orig_mixer;
-extern const uint8_t orig_pga;
-
-void     APP_end_tx(void);
-void     APP_stop_scan(void);
-void     APP_channel_next(const bool remember_current, const scan_state_dir_t scan_direction);
-bool     APP_start_listening(void);
-void     APP_time_slice_10ms(void);
-void     APP_time_slice_500ms(void);
+#ifdef ENABLE_SCAN_IGNORE_LIST
+	void FI_clear_freq_ignored(void);
+	int  FI_freq_ignored(const uint32_t frequency);
+	bool FI_add_freq_ignored(const uint32_t frequency);
+	void FI_sub_freq_ignored(const uint32_t frequency);
+#endif
 
 #endif
 

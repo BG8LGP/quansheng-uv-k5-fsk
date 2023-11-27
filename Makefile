@@ -1,10 +1,8 @@
 
 # compile options (see README.md for descriptions)
+#
 # 0 = remove code
 # 1 = include code
-
-# When testing the extra options, be careful not to exceed the
-# 64 kB flash memory limit.
 
 ENABLE_CLANG                     := 0
 ENABLE_SWD                       := 0
@@ -21,7 +19,7 @@ ENABLE_AIRCOPY_RX_REBOOT         := 0
 ENABLE_FMRADIO_64_76             := 0
 ENABLE_FMRADIO_76_90             := 0
 ENABLE_FMRADIO_76_108            := 0
-ENABLE_FMRADIO_875_108           := 1
+ENABLE_FMRADIO_875_108           := 0
 ENABLE_FMRADIO_64_108            := 0
 # NOAA 1.2 kB
 ENABLE_NOAA                      := 0
@@ -38,16 +36,17 @@ ENABLE_TX1750                    := 0
 # MDC1200 2.8 kB
 ENABLE_MDC1200                   := 1
 ENABLE_MDC1200_SHOW_OP_ARG       := 1
+ENABLE_MDC1200_SIDE_BEEP         := 1
 ENABLE_PWRON_PASSWORD            := 0
 ENABLE_RESET_AES_KEY             := 0
 ENABLE_BIG_FREQ                  := 1
+ENABLE_SHOW_FREQS_CHAN           := 1
 # smaa bolf 580 B
 ENABLE_SMALL_BOLD                := 1
 # smallest font 2 kB
 ENABLE_SMALLEST_FONT             := 0
 # trim trailing 44 B
 ENABLE_TRIM_TRAILING_ZEROS       := 0
-ENABLE_KEEP_MEM_NAME             := 1
 ENABLE_WIDE_RX                   := 1
 ENABLE_TX_WHEN_AM                := 0
 # Freq calibration 188 B
@@ -60,15 +59,18 @@ ENABLE_DTMF_CALL_FLASH_LIGHT     := 1
 ENABLE_FLASH_LIGHT_SOS_TONE      := 0
 ENABLE_SHOW_CHARGE_LEVEL         := 0
 ENABLE_REVERSE_BAT_SYMBOL        := 1
+ENABLE_FREQ_SEARCH_LNA           := 1
 ENABLE_FREQ_SEARCH_TIMEOUT       := 0
 ENABLE_CODE_SEARCH_TIMEOUT       := 0
+ENABLE_SCAN_IGNORE_LIST          := 1
+ENABLE_SCAN_RANGES               := 1
 # Kill and Revive 400 B
 ENABLE_KILL_REVIVE               := 0
 # AM Fix 800 B
 ENABLE_AM_FIX                    := 1
 ENABLE_AM_FIX_SHOW_DATA          := 0
 # Squelch 12 B .. can't be right ?
-ENABLE_SQUELCH_MORE_SENSITIVE    := 1
+ENABLE_SQUELCH_MORE_SENSITIVE    := 0
 ENABLE_SQ_OPEN_WITH_UP_DN_BUTTS  := 1
 ENABLE_FASTER_CHANNEL_SCAN       := 1
 ENABLE_COPY_CHAN_TO_VFO_TO_CHAN  := 1
@@ -77,10 +79,10 @@ ENABLE_RX_SIGNAL_BAR             := 1
 # Tx Audio Bar 300 B
 ENABLE_TX_AUDIO_BAR              := 1
 # Side Button Menu 300 B
-ENABLE_SIDE_BUTT_MENU            := 1
+ENABLE_SIDE_BUTT_MENU            := 0
 # Key Lock 400 B
-ENABLE_KEYLOCK                   := 0
-#ENABLE_PANADAPTER               := 0
+ENABLE_KEYLOCK                   := 1
+ENABLE_PANADAPTER                := 0
 #ENABLE_SINGLE_VFO_CHAN          := 0
 
 #############################################################
@@ -144,9 +146,7 @@ ifeq ($(ENABLE_FMRADIO), 1)
 	OBJS += driver/bk1080.o
 endif
 OBJS += driver/bk4819.o
-ifeq ($(filter $(ENABLE_AIRCOPY) $(ENABLE_UART) $(ENABLE_MDC1200), 1), 1)
-	OBJS += driver/crc.o
-endif
+OBJS += driver/crc.o
 OBJS += driver/eeprom.o
 ifeq ($(ENABLE_OVERLAY),1)
 	OBJS += driver/flash.o
@@ -176,8 +176,11 @@ OBJS += app/generic.o
 OBJS += app/main.o
 OBJS += app/menu.o
 OBJS += app/search.o
+ifeq ($(ENABLE_SCAN_IGNORE_LIST),1)
+	OBJS += freq_ignore.o
+endif
 ifeq ($(ENABLE_PANADAPTER),1)
-	OBJS += app/spectrum.o
+//	OBJS += app/spectrum.o
 endif
 ifeq ($(ENABLE_UART),1)
 	OBJS += app/uart.o
@@ -277,6 +280,8 @@ endif
 # better to bust than add new bugs
 CFLAGS += -Wall -Wextra -Wpedantic
 
+CFLAGS += -DCPU_CLOCK_HZ=48000000
+
 CFLAGS += -DPRINTF_INCLUDE_CONFIG_H
 CFLAGS += -DGIT_HASH=\"$(GIT_HASH)\"
 ifeq ($(ENABLE_SWD),1)
@@ -321,6 +326,9 @@ endif
 ifeq ($(ENABLE_BIG_FREQ),1)
 	CFLAGS  += -DENABLE_BIG_FREQ
 endif
+ifeq ($(ENABLE_SHOW_FREQS_CHAN),1)
+	CFLAGS  += -DENABLE_SHOW_FREQS_CHAN
+endif
 ifeq ($(ENABLE_SMALL_BOLD),1)
 	CFLAGS  += -DENABLE_SMALL_BOLD
 endif
@@ -360,14 +368,14 @@ endif
 ifeq ($(ENABLE_MDC1200_SHOW_OP_ARG),1)
 	CFLAGS  += -DENABLE_MDC1200_SHOW_OP_ARG
 endif
+ifeq ($(ENABLE_MDC1200_SIDE_BEEP),1)
+	CFLAGS  += -DENABLE_MDC1200_SIDE_BEEP
+endif
 ifeq ($(ENABLE_PWRON_PASSWORD),1)
 	CFLAGS  += -DENABLE_PWRON_PASSWORD
 endif
 ifeq ($(ENABLE_RESET_AES_KEY),1)
 	CFLAGS  += -DENABLE_RESET_AES_KEY
-endif
-ifeq ($(ENABLE_KEEP_MEM_NAME),1)
-	CFLAGS  += -DENABLE_KEEP_MEM_NAME
 endif
 ifeq ($(ENABLE_WIDE_RX),1)
 	CFLAGS  += -DENABLE_WIDE_RX
@@ -405,8 +413,17 @@ endif
 ifeq ($(ENABLE_CODE_SEARCH_TIMEOUT),1)
 	CFLAGS  += -DENABLE_CODE_SEARCH_TIMEOUT
 endif
+ifeq ($(ENABLE_SCAN_IGNORE_LIST),1)
+	CFLAGS  += -DENABLE_SCAN_IGNORE_LIST
+endif
+ifeq ($(ENABLE_SCAN_RANGES),1)
+	CFLAGS  += -DENABLE_SCAN_RANGES
+endif
 ifeq ($(ENABLE_KILL_REVIVE),1)
 	CFLAGS  += -DENABLE_KILL_REVIVE
+endif
+ifeq ($(ENABLE_FREQ_SEARCH_LNA),1)
+	CFLAGS  += -DENABLE_FREQ_SEARCH_LNA
 endif
 ifeq ($(ENABLE_FREQ_SEARCH_TIMEOUT),1)
 	CFLAGS  += -DENABLE_FREQ_SEARCH_TIMEOUT

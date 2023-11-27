@@ -24,6 +24,14 @@
 #include "dcs.h"
 #include "frequencies.h"
 
+enum mod_mode_e {
+	MOD_MODE_FM = 0,
+	MOD_MODE_AM,
+	MOD_MODE_DSB,
+	MOD_MODE_LEN
+};
+typedef enum mod_mode_e mod_mode_t;
+
 enum pwr_on_display_mode_e {
 	PWR_ON_DISPLAY_MODE_FULL_SCREEN = 0,
 	PWR_ON_DISPLAY_MODE_MESSAGE,
@@ -102,15 +110,15 @@ enum {
 #endif
 
 enum alarm_mode_e {
-	ALARM_MODE_SITE = 0,
-	ALARM_MODE_TONE
+	ALARM_MODE_SITE = 0,   // TX
+	ALARM_MODE_TONE        // don't TX
 };
 typedef enum alarm_mode_e alarm_mode_t;
 
 enum roger_mode_e {
 	ROGER_MODE_OFF = 0,
-	ROGER_MODE_ROGER,
-	ROGER_MODE_MDC
+	ROGER_MODE_ROGER1,
+	ROGER_MODE_ROGER2
 };
 typedef enum roger_mode_e roger_mode_t;
 
@@ -191,10 +199,10 @@ typedef struct {
 		uint8_t unused3:2;                   //
 	#endif
 	#if 0
-		uint8_t am_mode:1;                   //  FM/AM
+		uint8_t mod_mode:1;                  //  FM/AM
 		uint8_t unused4:3;                   //
 	#else                          
-		uint8_t am_mode:2;                   //  FM/AM/DSB
+		uint8_t mod_mode:2;                  //  FM/AM/DSB
 		uint8_t unused4:2;                   //
 	#endif
 	// [12]
@@ -213,17 +221,24 @@ typedef struct {
 	// [13]
 	uint8_t  dtmf_decoding_enable:1;         //
 	uint8_t  dtmf_ptt_id_tx_mode:3;          //
-	uint8_t  unused6:4;                      //
-	// [14]
-	uint8_t  step_setting;                   //
-	// [15]
-	uint8_t  scrambler:4;                    //
 	#if 0
 		// QS
-		uint8_t unused7:4;                   //
+		uint8_t unused6:4;                   //
 	#else
 		// 1of11
 		uint8_t squelch_level:4;             // 0 ~ 9 per channel squelch, 0 = use main squelch level
+	#endif
+	// [14]
+	uint8_t  step_setting;                   //
+	// [15]
+	#if 0
+		// QS
+		uint8_t scrambler:4;                 //
+		uint8_t unused7:4;                   //
+	#else
+		// 1of11
+		uint8_t scrambler:5;                 // more scrambler frequencies
+		uint8_t unused7:3;                   //
 	#endif
 } __attribute__((packed)) t_channel;         //
 
@@ -279,6 +294,8 @@ typedef struct {
 		uint8_t        vox_enabled;                     //
 		uint8_t        vox_level;                       //
 		uint8_t        mic_sensitivity;                 //
+
+		// 0x0E78
 		#ifdef ENABLE_CONTRAST
 			uint8_t    lcd_contrast;                    // 1of11
 		#else
@@ -409,7 +426,10 @@ typedef struct {
 
 			uint8_t    scan_hold_time;        // ticks we stay paused for on an RX'ed signal when scanning
 
-			uint8_t    unused12[7];           // 0xff's
+			uint8_t    scan_ranges_enable:1;  // enable/disable auto scan ranges
+			uint8_t    unused11g:7;           // 0xff's
+
+			uint8_t    unused12[6];           // 0xff's
 		#endif
 	}  __attribute__((packed)) setting;
 
@@ -446,9 +466,11 @@ typedef struct {
 		uint8_t unused6[6];                         // 0xff's
 	} __attribute__((packed)) squelch_band[2];      // 0 = bands 4567, 1 = bands 123
 
-	// 0x1EC0
-	uint16_t rssi_band_4567[4];                     // RSSI bargraph thresholds .. (dBm + 160) * 2
-	uint16_t rssi_band_123[4];                      // RSSI bargraph thresholds .. (dBm + 160) * 2
+	// 0x1EC0 .. mine = 006E 0078 0082 008C 0086 00AA 00CE 00F2
+	struct {	// RSSI bargraph thresholds .. (dBm + 160) * 2
+		uint16_t band_4567[4];                      //
+		uint16_t band_123[4];                       // 
+	} __attribute__((packed)) rssi_cal;
 
 	// 0x1ED0
 	struct
@@ -559,6 +581,7 @@ void SETTINGS_write_eeprom_config(void);
 void SETTINGS_save_vfo_indices(void);
 void SETTINGS_save(void);
 void SETTINGS_save_channel(const unsigned int channel, const unsigned int vfo, vfo_info_t *p_vfo, const unsigned int mode);
+void SETTINGS_save_chan_name(const unsigned int channel);
 void SETTINGS_save_chan_attribs_name(const unsigned int channel, const vfo_info_t *p_vfo);
 
 unsigned int SETTINGS_find_channel(const uint32_t frequency);
