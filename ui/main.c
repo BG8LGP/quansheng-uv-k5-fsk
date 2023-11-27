@@ -286,6 +286,7 @@ void UI_update_rssi(const int rssi, const unsigned int glitch, const unsigned in
 		(void)noise;
 	#endif
 
+#ifndef ENABLE_RX_SIGNAL_BAR
 	{	// original little RSSI bars
 
 		const unsigned int line       = (vfo == 0) ? 3 : 7;
@@ -358,11 +359,15 @@ void UI_update_rssi(const int rssi, const unsigned int glitch, const unsigned in
 
 		if (rssi_level == 0)
 			pline = NULL;
+
 		else
 			draw_small_antenna_bars(pline, rssi_level);
 
 		ST7565_DrawLine(0, line, 23, pline);
 	}
+#else
+	(void)vfo; // to avoid compiler to complain that 'vfo' is not used
+#endif // ENABLE_RX_SIGNAL_BAR
 }
 
 // ***************************************************************************
@@ -444,7 +449,9 @@ void UI_DisplayMain(void)
 		const unsigned int scrn_chan  = g_eeprom.config.setting.indices.vfo[vfo_num].screen;
 		const unsigned int line       = (vfo_num == 0) ? line0 : line1;
 		uint8_t           *p_line0    = g_frame_buffer[line + 0];
+#ifndef ENABLE_RX_SIGNAL_BAR
 		uint8_t           *p_line1    = g_frame_buffer[line + 1];
+#endif
 		unsigned int       mode       = 0;
 		unsigned int       state;
 
@@ -830,7 +837,7 @@ void UI_DisplayMain(void)
 		}
 
 		// ************
-
+#ifndef ENABLE_RX_SIGNAL_BAR
 		{	// show the TX/RX level
 			uint8_t Level = 0;
 
@@ -852,7 +859,7 @@ void UI_DisplayMain(void)
 
 			draw_small_antenna_bars(p_line1 + LCD_WIDTH, Level);
 		}
-
+#endif
 		// ************
 
 		str[0] = '\0';
