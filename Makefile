@@ -29,7 +29,6 @@ ENABLE_MUTE_RADIO_FOR_VOICE      := 0
 # Tx on Voice 1.0 kB
 ENABLE_VOX                       := 0
 ENABLE_VOX_MORE_SENSITIVE        := 1
-ENABLE_REDUCE_LOW_MID_TX_POWER   := 1
 # Tx Alarm 600 B
 ENABLE_ALARM                     := 0
 ENABLE_TX1750                    := 0
@@ -51,15 +50,17 @@ ENABLE_WIDE_RX                   := 1
 ENABLE_TX_WHEN_AM                := 0
 # Freq calibration 188 B
 ENABLE_F_CAL_MENU                := 0
-ENABLE_TX_UNLOCK                 := 0
+ENABLE_TX_UNLOCK_MENU            := 0
+#ENABLE_TX_POWER_CAL_MENU        := 0
+ENABLE_TX_POWER_FIX              := 1
 ENABLE_CTCSS_TAIL_PHASE_SHIFT    := 1
 ENABLE_CONTRAST                  := 0
 ENABLE_BOOT_BEEPS                := 1
 ENABLE_DTMF_CALL_FLASH_LIGHT     := 1
 ENABLE_FLASH_LIGHT_SOS_TONE      := 0
 ENABLE_SHOW_CHARGE_LEVEL         := 0
-ENABLE_REVERSE_BAT_SYMBOL        := 1
-ENABLE_FREQ_SEARCH_LNA           := 1
+ENABLE_REVERSE_BAT_SYMBOL        := 0
+ENABLE_FREQ_SEARCH_LNA           := 0
 ENABLE_FREQ_SEARCH_TIMEOUT       := 0
 ENABLE_CODE_SEARCH_TIMEOUT       := 0
 ENABLE_SCAN_IGNORE_LIST          := 1
@@ -69,8 +70,7 @@ ENABLE_KILL_REVIVE               := 0
 # AM Fix 800 B
 ENABLE_AM_FIX                    := 1
 ENABLE_AM_FIX_SHOW_DATA          := 0
-# Squelch 12 B .. can't be right ?
-ENABLE_SQUELCH_MORE_SENSITIVE    := 0
+ENABLE_SQUELCH_MORE_SENSITIVE    := 1
 ENABLE_SQ_OPEN_WITH_UP_DN_BUTTS  := 1
 ENABLE_FASTER_CHANNEL_SCAN       := 1
 ENABLE_COPY_CHAN_TO_VFO_TO_CHAN  := 1
@@ -81,9 +81,11 @@ ENABLE_TX_AUDIO_BAR              := 1
 # Side Button Menu 300 B
 ENABLE_SIDE_BUTT_MENU            := 0
 # Key Lock 400 B
-ENABLE_KEYLOCK                   := 1
-ENABLE_PANADAPTER                := 0
-#ENABLE_SINGLE_VFO_CHAN          := 0
+ENABLE_KEYLOCK                   := 0
+ENABLE_PANADAPTER                := 1
+ENABLE_PANADAPTER_PEAK_FREQ      := 0
+# single VFO 1.4 kB
+ENABLE_SINGLE_VFO_CHAN           := 0
 
 #############################################################
 
@@ -179,9 +181,6 @@ OBJS += app/search.o
 ifeq ($(ENABLE_SCAN_IGNORE_LIST),1)
 	OBJS += freq_ignore.o
 endif
-ifeq ($(ENABLE_PANADAPTER),1)
-//	OBJS += app/spectrum.o
-endif
 ifeq ($(ENABLE_UART),1)
 	OBJS += app/uart.o
 endif
@@ -223,6 +222,9 @@ OBJS += ui/status.o
 OBJS += ui/ui.o
 OBJS += version.o
 OBJS += main.o
+ifeq ($(ENABLE_PANADAPTER),1)
+	OBJS += panadapter.o
+endif
 
 ifeq ($(OS), Windows_NT)
 	TOP := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
@@ -326,6 +328,9 @@ endif
 ifeq ($(ENABLE_BIG_FREQ),1)
 	CFLAGS  += -DENABLE_BIG_FREQ
 endif
+ifeq ($(ENABLE_DTMF_LIVE_DECODER),1)
+	CFLAGS  += -DENABLE_DTMF_LIVE_DECODER
+endif
 ifeq ($(ENABLE_SHOW_FREQS_CHAN),1)
 	CFLAGS  += -DENABLE_SHOW_FREQS_CHAN
 endif
@@ -353,8 +358,8 @@ endif
 ifeq ($(ENABLE_VOX_MORE_SENSITIVE),1)
 	CFLAGS  += -DENABLE_VOX_MORE_SENSITIVE
 endif
-ifeq ($(ENABLE_REDUCE_LOW_MID_TX_POWER),1)
-	CFLAGS  += -DENABLE_REDUCE_LOW_MID_TX_POWER
+ifeq ($(ENABLE_TX_POWER_FIX),1)
+	CFLAGS  += -DENABLE_TX_POWER_FIX
 endif
 ifeq ($(ENABLE_ALARM),1)
 	CFLAGS  += -DENABLE_ALARM
@@ -386,8 +391,11 @@ endif
 ifeq ($(ENABLE_F_CAL_MENU),1)
 	CFLAGS  += -DENABLE_F_CAL_MENU
 endif
-ifeq ($(ENABLE_TX_UNLOCK),1)
-	CFLAGS  += -DENABLE_TX_UNLOCK
+ifeq ($(ENABLE_TX_UNLOCK_MENU),1)
+	CFLAGS  += -DENABLE_TX_UNLOCK_MENU
+endif
+ifeq ($(ENABLE_TX_POWER_CAL_MENU),1)
+	CFLAGS  += -DENABLE_TX_POWER_CAL_MENU
 endif
 ifeq ($(ENABLE_CTCSS_TAIL_PHASE_SHIFT),1)
 	CFLAGS  += -DENABLE_CTCSS_TAIL_PHASE_SHIFT
@@ -469,6 +477,9 @@ ifeq ($(ENABLE_SINGLE_VFO_CHAN),1)
 endif
 ifeq ($(ENABLE_PANADAPTER),1)
 	CFLAGS += -DENABLE_PANADAPTER
+endif
+ifeq ($(ENABLE_PANADAPTER_PEAK_FREQ),1)
+	CFLAGS += -DENABLE_PANADAPTER_PEAK_FREQ
 endif
 
 LDFLAGS =

@@ -23,11 +23,6 @@
 #include "frequencies.h"
 #include "radio.h"
 
-extern const uint8_t orig_lnas;
-extern const uint8_t orig_lna;
-extern const uint8_t orig_mixer;
-extern const uint8_t orig_pga;
-
 void     APP_end_tx(void);
 void     APP_stop_scan(void);
 void     APP_channel_next(const bool remember_current, const scan_state_dir_t scan_direction);
